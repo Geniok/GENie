@@ -139,6 +139,24 @@
 			scope = "config",
 		},
 
+		fxcompilerversion =
+		{
+			kind = "string",
+			scope = "config",
+		},
+		
+		fxcompileroutdir =
+		{
+			kind = "string",
+			scope = "config",
+		},
+		
+		fxcompilerdisableopt =
+		{
+			kind = "string",
+			scope = "config",
+		},
+		
 		excludes =
 		{
 			kind  = "filelist",

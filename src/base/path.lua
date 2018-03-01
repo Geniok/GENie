@@ -171,6 +171,10 @@
 	function path.iscppheader(fname)
 		return path.hasextension(fname, { ".h", ".hh", ".hpp", ".hxx" })
 	end
+	
+	function path.ishlslfile(fname)
+		return path.hasextension(fname, { ".hlsl", ".vs", ".ps", ".cs", ".hs", ".ds" })
+	end
 
 	function path.isappxmanifest(fname)
 		return path.hasextension(fname, ".appxmanifest")

@@ -422,6 +422,22 @@
 		end
 	end
 
+	local function vs10_fxcompile(cfg)
+		_p(2,'<FxCompile>')		
+		
+		if cfg.fxcompilerversion then
+			_p(3,'<ShaderModel>%s</ShaderModel>', cfg.fxcompilerversion)
+		end		
+		if cfg.fxcompileroutdir then
+			_p(3,'<ObjectFileOutput>%s</ObjectFileOutput>', cfg.fxcompileroutdir)
+		end		
+		if cfg.fxcompilerdisableopt then
+			_p(3,'<DisableOptimizations>%s</DisableOptimizations>', cfg.fxcompilerdisableopt)
+		end
+		
+		_p(2,'</FxCompile>')
+	end
+	
 	local function vs10_clcompile(cfg)
 		_p(2,'<ClCompile>')
 
@@ -850,6 +866,7 @@
 			_p(1,'<ItemDefinitionGroup ' ..if_config_and_platform() ..'>'
 					,premake.esc(cfginfo.name))
 				vs10_clcompile(cfg)
+				vs10_fxcompile(cfg)
 				resource_compile(cfg)
 				item_def_lib(cfg)
 				vc2010.link(cfg)
@@ -871,6 +888,7 @@
 			sortedfiles = {
 				ClCompile = {},
 				ClInclude = {},
+				FxCompile = {},
 				MASM = {},
 				Object = {},
 				None = {},
@@ -890,6 +908,8 @@
 					if not table.icontains(prj.removefiles, file) then
 						table.insert(sortedfiles.ClInclude, file)
 					end
+				elseif path.ishlslfile(file.name) then					
+					table.insert(sortedfiles.FxCompile, file)
 				elseif path.isobjectfile(file.name) then
 					table.insert(sortedfiles.Object, file)
 				elseif path.isresourcefile(file.name) then
@@ -958,6 +978,7 @@
 	function vc2010.files(prj)
 		vc2010.simplefilesgroup(prj, "ClInclude")
 		vc2010.compilerfilesgroup(prj)
+		vc2010.fxcompilefilesgroup(prj)
 		vc2010.simplefilesgroup(prj, "Object")
 		vc2010.simplefilesgroup(prj, "None")
 		vc2010.customtaskgroup(prj)
@@ -1051,6 +1072,59 @@
 				_p(3,'<DeploymentContent>true</DeploymentContent>')
 				_p(3,'<Link>%s</Link>', path.translate(file.vpath, "\\"))
 				_p(2,'</%s>', filetype)
+			end
+			_p(1,'</ItemGroup>')
+		end
+	end
+	
+	function vc2010.fxcompilefilesgroup(prj)
+		local configs = prj.solution.vstudio_configs
+		local files = vc2010.getfilegroup(prj, "FxCompile")
+		if #files > 0  then
+			_p(1,'<ItemGroup>')
+			local existingBasenames = {};
+			for _, file in ipairs(files) do
+				-- Having unique ObjectFileName for each file subverts MSBuilds ability to parallelize compilation with the /MP flag.
+				-- Instead we detect duplicates and partition them in subfolders only if needed.
+				local filename = string.lower(path.getbasename(file.name))
+				local disambiguation = existingBasenames[filename] or 0;
+				existingBasenames[filename] = disambiguation + 1
+
+				local translatedpath = path.translate(file.name, "\\")
+				_p(2, '<FxCompile Include=\"%s\">', translatedpath)
+				_p(3, '<FileType>Document</FileType>')
+				
+				-- handle shader_name_GS.hlsl or shader_name.gs styles
+				if string.find(filename, ".vs") or string.find(filename, "VS") then
+					_p(3, '<ShaderType>Vertex</ShaderType>')
+				elseif string.find(filename, ".ps") or string.find(filename, "PS") then
+					_p(3, '<ShaderType>Pixel</ShaderType>')
+				elseif string.find(filename, ".ds") or string.find(filename, "DS") then
+					_p(3, '<ShaderType>Domain</ShaderType>')
+			    elseif string.find(filename, ".hs") or string.find(filename, "HS") then
+					_p(3, '<ShaderType>Hull</ShaderType>')
+				elseif string.find(filename, ".gs") or string.find(filename, "GS") then
+					_p(3, '<ShaderType>Geometry</ShaderType>')
+				elseif string.find(filename, ".cs") or string.find(filename, "CS") then
+					_p(3, '<ShaderType>Compute</ShaderType>')
+				end
+				
+				local excluded = table.icontains(prj.excludes, file.name)
+				for _, vsconfig in ipairs(configs) do
+					local cfg = premake.getconfig(prj, vsconfig.src_buildcfg, vsconfig.src_platform)
+					local fileincfg = table.icontains(cfg.files, file.name)
+					local cfgexcluded = table.icontains(cfg.excludes, file.name)
+
+					if excluded or not fileincfg or cfgexcluded then
+						_p(3, '<ExcludedFromBuild '
+							.. if_config_and_platform()
+							.. '>true</ExcludedFromBuild>'
+							, premake.esc(vsconfig.name)
+							)
+					end
+				end
+
+				_p(2,'</FxCompile>')
 			end
 			_p(1,'</ItemGroup>')
 		end
