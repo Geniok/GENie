@@ -157,6 +157,42 @@
 			scope = "config",
 		},
 		
+		fxcompilervertexshaders =
+		{			
+			kind  = "filelist",
+			scope = "config",
+		},
+		
+		fxcompilerpixelshaders =
+		{			
+			kind  = "filelist",
+			scope = "config",
+		},
+		
+		fxcompilerdomainshaders =
+		{			
+			kind  = "filelist",
+			scope = "config",
+		},
+		
+		fxcompilerhullshaders =
+		{			
+			kind  = "filelist",
+			scope = "config",
+		},
+		
+		fxcompilergeomtryshaders =
+		{			
+			kind  = "filelist",
+			scope = "config",
+		},
+		
+		fxcompilercomputeshaders =
+		{			
+			kind  = "filelist",
+			scope = "config",
+		},
+		
 		excludes =
 		{
 			kind  = "filelist",

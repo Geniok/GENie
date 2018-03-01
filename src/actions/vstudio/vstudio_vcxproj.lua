@@ -1086,27 +1086,42 @@
 			for _, file in ipairs(files) do
 				-- Having unique ObjectFileName for each file subverts MSBuilds ability to parallelize compilation with the /MP flag.
 				-- Instead we detect duplicates and partition them in subfolders only if needed.
-				local filename = string.lower(path.getbasename(file.name))
-				local disambiguation = existingBasenames[filename] or 0;
-				existingBasenames[filename] = disambiguation + 1
+				local basefilename = string.lower(path.getbasename(file.name))
+				local disambiguation = existingBasenames[basefilename] or 0;
+				existingBasenames[basefilename] = disambiguation + 1
 
 				local translatedpath = path.translate(file.name, "\\")
 				_p(2, '<FxCompile Include=\"%s\">', translatedpath)
 				_p(3, '<FileType>Document</FileType>')
-				
-				-- handle shader_name_GS.hlsl or shader_name.gs styles
-				if string.find(filename, ".vs") or string.find(filename, "VS") then
+								
+				local filename = path.getname(file.name)
+				if table.icontains(prj.fxcompilervertexshaders, file.name) then
 					_p(3, '<ShaderType>Vertex</ShaderType>')
-				elseif string.find(filename, ".ps") or string.find(filename, "PS") then
-					_p(3, '<ShaderType>Pixel</ShaderType>')
-				elseif string.find(filename, ".ds") or string.find(filename, "DS") then
-					_p(3, '<ShaderType>Domain</ShaderType>')
-			    elseif string.find(filename, ".hs") or string.find(filename, "HS") then
-					_p(3, '<ShaderType>Hull</ShaderType>')
-				elseif string.find(filename, ".gs") or string.find(filename, "GS") then
-					_p(3, '<ShaderType>Geometry</ShaderType>')
-				elseif string.find(filename, ".cs") or string.find(filename, "CS") then
-					_p(3, '<ShaderType>Compute</ShaderType>')
+				elseif table.icontains(prj.fxcompilerpixelshaders, file.name) then
+					_p(3, '<ShaderType>Pixel</ShaderType>')				
+				elseif table.icontains(prj.fxcompilerdomainshaders, file.name) then
+					_p(3, '<ShaderType>Domain</ShaderType>')	
+				elseif table.icontains(prj.fxcompilerhullshaders, file.name) then
+					_p(3, '<ShaderType>Hull</ShaderType>')	
+				elseif table.icontains(prj.fxcompilergeomtryshaders, file.name) then
+					_p(3, '<ShaderType>Geometry</ShaderType>')	
+				elseif table.icontains(prj.fxcompilercomputeshaders, file.name) then
+					_p(3, '<ShaderType>Compute</ShaderType>')	
+				else
+					-- handle shader_name_GS.hlsl or shader_name.gs styles
+					if string.find(filename, ".vs") or string.find(filename, "VS") then
+						_p(3, '<ShaderType>Vertex</ShaderType>')
+					elseif string.find(filename, ".ps") or string.find(filename, "PS") then
+						_p(3, '<ShaderType>Pixel</ShaderType>')
+					elseif string.find(filename, ".ds") or string.find(filename, "DS") then
+						_p(3, '<ShaderType>Domain</ShaderType>')
+					elseif string.find(filename, ".hs") or string.find(filename, "HS") then
+						_p(3, '<ShaderType>Hull</ShaderType>')
+					elseif string.find(filename, ".gs") or string.find(filename, "GS") then
+						_p(3, '<ShaderType>Geometry</ShaderType>')
+					elseif string.find(filename, ".cs") or string.find(filename, "CS") then
+						_p(3, '<ShaderType>Compute</ShaderType>')
+					end
 				end
 				
 				local excluded = table.icontains(prj.excludes, file.name)
